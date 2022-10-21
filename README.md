@@ -1,4 +1,4 @@
-near-blank-project
+near-care-connect-project
 ==================
 
 This app was initialized with [create-near-app]
