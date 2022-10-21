@@ -53,10 +53,13 @@ impl Contract {
     }
 
     // Public method - accepts a patient info
-    pub fn set_patient(&mut self, name: String) {
+    pub fn set_patient(&mut self, name: String, age: String, email: String, description: String) {
         // Use env::log to record logs permanently to the blockchain!
         log!("Saving patient {}", name);
         self.patient.name = name;
+        self.patient.age = age;
+        self.patient.email = email;
+        self.patient.description = description;
     }
 }
 

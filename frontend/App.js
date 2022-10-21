@@ -30,15 +30,15 @@ export default function App({ isSignedIn, PatientNEAR, wallet }) {
   function changePatient(e) {
     e.preventDefault();
     setUiPleaseWait(true);
-    const { patientInput } = e.target.elements;
-    PatientNEAR.setPatient(patientInput.value)
+    const { patientInputName, patientInputAge, patientInputEmail, patientInputDescription } = e.target.elements;
+    PatientNEAR.setPatient(patientInputName.value, patientInputAge.value, patientInputEmail.value, patientInputDescription.value)
       .then(async () => {return PatientNEAR.getPatient();})
       .then(setValueFromBlockchain)
       .finally(() => {
         setUiPleaseWait(false);
       });
   }
-
+console.log(valueFromBlockchain);
   return (
     <>
       <SignOutButton accountId={wallet.accountId} onClick={() => wallet.signOut()}/>
