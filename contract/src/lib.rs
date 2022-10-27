@@ -7,36 +7,60 @@
  */
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{log, near_bindgen};
+use near_sdk::collections::UnorderedMap;
+use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{env, near_bindgen};
 
-// Define the default message
-const DEFAULT_USERNAME: &str = "Username";
-const DEFAULT_AGE: &str = "0";
-const DEFAULT_EMAIL: &str = "Email";
-const DEFAULT_DESCRIPTION: &str = "Description";
+#[derive(Serialize, Deserialize, BorshDeserialize, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct Patient {
+    pub id: u64,
+    pub created_by: String,
+    pub name: String,
+    pub age: String,
+    pub email: String,
+    pub description: String,
+}
+
+impl Default for Patient {
+    fn default() -> Self {
+        Patient {
+            id: 0,
+            created_by: String::from(""),
+            name: String::from(""),
+            age: String::from(""),
+            email: String::from(""),
+            description: String::from(""),
+        }
+    }
+}
+
+impl Patient {
+    pub fn new(name: String, age: String, email: String, description: String) -> Self {
+        Self {
+            id: env::block_index(),
+            created_by: env::signer_account_id().to_string(),
+            name,
+            age,
+            email,
+            description,
+        }
+    }
+}
 
 // Define the contract structure
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Contract {
-    patient: Patient,
-}
-
-#[derive(BorshDeserialize, BorshSerialize, serde::Serialize)]
-pub struct Patient {
-    name: String,
-    age: String,
-    email: String,
-    description: String,
+    patients: UnorderedMap<u64, Patient>,
 }
 
 // Define the default, which automatically initializes the contract
-impl Default for Contract{
-    fn default() -> Self{
-        Self{patient : Patient { name : DEFAULT_USERNAME.to_string(),
-            age : DEFAULT_AGE.to_string(),
-            email : DEFAULT_EMAIL.to_string(),
-            description : DEFAULT_DESCRIPTION.to_string()}}
+impl Default for Contract {
+    fn default() -> Self {
+        Self {
+            patients: UnorderedMap::new(b"e".to_vec()),
+        }
     }
 }
 
@@ -44,22 +68,41 @@ impl Default for Contract{
 #[near_bindgen]
 impl Contract {
     // Public method - returns the patient saved
-    pub fn get_patient(&self) -> Patient {
-        let patient = Patient { name : DEFAULT_USERNAME.to_string(),
-            age : DEFAULT_AGE.to_string(),
-            email : DEFAULT_EMAIL.to_string(),
-            description : DEFAULT_DESCRIPTION.to_string()};
-        return patient;
+    pub fn get_patient(&self, id: u64) -> Option<Patient> {
+        self.patients.get(&id)
+    }
+
+    pub fn get_patients(&self) -> Vec<(u64, Patient)> {
+        self.patients.to_vec()
     }
 
     // Public method - accepts a patient info
-    pub fn set_patient(&mut self, name: String, age: String, email: String, description: String) {
-        // Use env::log to record logs permanently to the blockchain!
-        log!("Saving patient {}", name);
-        self.patient.name = name;
-        self.patient.age = age;
-        self.patient.email = email;
-        self.patient.description = description;
+    pub fn create_patient(
+        &mut self,
+        name: String,
+        age: String,
+        email: String,
+        description: String,
+    ) {
+
+        let patient = Patient::new(
+            String::from(&name),
+            String::from(&age),
+            String::from(&email),
+            String::from(&description),
+        );
+
+        //Lo guardamos en la coleccion de patients
+        self.patients.insert(&patient.id, &patient);
+
+        //Manda un mensaje a la terminal al ejecutar el método
+        env::log(
+            format!(
+                "Nuevo patient añadido con éxito. Id Patient: {}",
+                &patient.id
+            )
+            .as_bytes(),
+        )
     }
 }
 
@@ -74,11 +117,7 @@ mod tests {
     #[test]
     fn get_default_patient() {
         let contract = Contract::default();
-        // this test did not call set_patient so should return the default "Username" patient
-        assert_eq!(
-            contract.get_patient().name,
-            "Username".to_string()
-        );
+        // this test did not call create_patient so should return the default "Username" patient
+        assert_eq!(contract.get_patient().name, "Username".to_string());
     }
-
 }

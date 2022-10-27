@@ -1,10 +1,10 @@
-import 'regenerator-runtime/runtime';
-import React from 'react';
+import "regenerator-runtime/runtime";
+import React from "react";
 
-import './assets/global.css';
+import "./assets/global.css";
 
-import { SignInPrompt, SignOutButton } from './ui-components';
-
+import { SignInPrompt, SignOutButton } from "./ui-components";
+import { values } from "regenerator-runtime";
 
 export default function App({ isSignedIn, PatientNEAR, wallet }) {
   const [valueFromBlockchain, setValueFromBlockchain] = React.useState();
@@ -13,8 +13,9 @@ export default function App({ isSignedIn, PatientNEAR, wallet }) {
 
   // Get blockchian state once on component load
   React.useEffect(() => {
-    PatientNEAR.getPatient()
+    PatientNEAR.getPatients()
       .then(setValueFromBlockchain)
+      .then(valueFromBlockchain)
       .catch(alert)
       .finally(() => {
         setUiPleaseWait(false);
@@ -24,78 +25,95 @@ export default function App({ isSignedIn, PatientNEAR, wallet }) {
   /// If user not signed-in with wallet - show prompt
   if (!isSignedIn) {
     // Sign-in flow will reload the page later
-    return <SignInPrompt patient={valueFromBlockchain} onClick={() => wallet.signIn()}/>;
+    return (
+      <SignInPrompt
+        patients={valueFromBlockchain}
+        onClick={() => wallet.signIn()}
+      />
+    );
   }
 
-  function changePatient(e) {
+  function createPatient(e) {
     e.preventDefault();
     setUiPleaseWait(true);
-    const { patientInputName, patientInputAge, patientInputEmail, patientInputDescription } = e.target.elements;
-    PatientNEAR.setPatient(patientInputName.value, patientInputAge.value, patientInputEmail.value, patientInputDescription.value)
-      .then(async () => {return PatientNEAR.getPatient();})
+    const {
+      patientInputName,
+      patientInputAge,
+      patientInputEmail,
+      patientInputDescription,
+    } = e.target.elements;
+
+    PatientNEAR.createPatient(
+      patientInputName.value,
+      patientInputAge.value,
+      patientInputEmail.value,
+      patientInputDescription.value
+    )
+      .then(async () => {
+        return PatientNEAR.getPatients();
+      })
       .then(setValueFromBlockchain)
       .finally(() => {
         setUiPleaseWait(false);
       });
   }
-console.log(valueFromBlockchain);
   return (
     <>
-      <SignOutButton accountId={wallet.accountId} onClick={() => wallet.signOut()}/>
-      <main className={uiPleaseWait ? 'please-wait' : ''}>
-        <h1>Patient info</h1>
-        <p>
-          Name: <span className="patient">{valueFromBlockchain?.name}</span>
-        </p>
-        <p>
-          Age: <span className="patient">{valueFromBlockchain?.age}</span>
-        </p>
-        <p>
-          Email: <span className="patient">{valueFromBlockchain?.email}</span>
-        </p>
-        <p>
-          Description: <span className="patient">{valueFromBlockchain?.description}</span>
-        </p>
-        <form onSubmit={changePatient} className="change">
-          <label>Change patient info:</label>
-          <div>
+      <SignOutButton
+        accountId={wallet.accountId}
+        onClick={() => wallet.signOut()}
+      />
+      <main className={uiPleaseWait ? "please-wait" : ""}>
+        {valueFromBlockchain &&
+          valueFromBlockchain?.map((value) => (
             <div>
-            <input
-              autoComplete="off"
-              defaultValue={valueFromBlockchain?.name}
-              id="patientInputName"
-              placeholder='Name'
-            />
+              <h1>Patient info</h1>
+              <p>
+                Name: <span className="patient">{value?.name}</span>
+              </p>
+              <p>
+                Age: <span className="patient">{value?.age}</span>
+              </p>
+              <p>
+                Email:
+                <span className="patient">{value?.email}</span>
+              </p>
+              <p>
+                Description:
+                <span className="patient">{value?.description}</span>
+              </p>
             </div>
-            <div>
-            <input
-              autoComplete="off"
-              defaultValue={valueFromBlockchain?.age}
-              id="patientInputAge"
-              placeholder='Age'
-            />
-            </div>
-            <div>
-            <input
-              autoComplete="off"
-              defaultValue={valueFromBlockchain?.email}
-              id="patientInputEmail"
-              placeholder='Email'
-            />
-            </div>
-            <div>
-            <input
-              autoComplete="off"
-              defaultValue={valueFromBlockchain?.description}
-              id="patientInputDescription"
-              placeholder='Description'
-            />
-            </div>
-            <button>
-              <span>Save</span>
-              <div className="loader"></div>
-            </button>
-          </div>
+          ))}
+        <form onSubmit={createPatient} className="change">
+          <label>Create patient info:</label>
+          <input
+            autoComplete="off"
+            id="patientInputName"
+            name="patientInputName"
+            placeholder="Name"
+          />
+          <input
+            autoComplete="off"
+            id="patientInputAge"
+            name="patientInputAge"
+            placeholder="Age"
+          />
+          <input
+            autoComplete="off"
+            id="patientInputEmail"
+            name="patientInputEmail"
+            placeholder="Email"
+          />
+          <input
+            autoComplete="off"
+            id="patientInputDescription"
+            name="patientInputDescription"
+            placeholder="Description"
+          />
+          <button>
+            <span>Save</span>
+            <div className="loader"></div>
+          </button>
         </form>
       </main>
     </>

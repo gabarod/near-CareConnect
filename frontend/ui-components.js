@@ -1,10 +1,10 @@
 import React from 'react';
 
-export function SignInPrompt({greeting, onClick}) {
+export function SignInPrompt({patients, onClick}) {
   return (
     <main>
       <h1>
-        The contract says: <span className="greeting">{greeting}</span>
+        The contract says: <span className="greeting">{patients}</span>
       </h1>
       <h3>
         Welcome to NEAR!
